@@ -7,4 +7,4 @@
 
 import Foundation
 
-public protocol State { }
+public protocol AnyState { }

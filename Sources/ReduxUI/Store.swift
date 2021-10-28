@@ -10,7 +10,7 @@ import SwiftUI
 import Foundation
 
 @available(iOS 13.0, *)
-public final class Store<S: State, A: Action>: ObservableObject {
+public final class Store<S: AnyState, A: AnyAction>: ObservableObject {
     @Published public private(set) var state: S
     
     public typealias Reducer = (_ state: S, _ action: A) -> S

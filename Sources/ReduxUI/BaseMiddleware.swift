@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @available(iOS 13.0, *)
-open class Middleware<S: State, A: Action> {
+open class Middleware<S: AnyState, A: AnyAction> {
     public init() { }
     open func execute(_ state: S, action: A) -> AnyPublisher<A, Never>? { return nil }
 }

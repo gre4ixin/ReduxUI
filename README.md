@@ -1,6 +1,6 @@
 # Simple Architecture like Redux
 
-## Very simple example of usage ReduxUI
+##### Very simple example of usage ReduxUI
 ```swift
 import ReduxUI
 
@@ -68,9 +68,9 @@ class AppModuleAssembly {
 
 ```
 
-#### That was very simple example, in real life you have to use network request, action in app state changes and many other features. In these cases you can use `Middleware`.
+##### That was very simple example, in real life you have to use network request, action in app state changes and many other features. In these cases you can use `Middleware`.
 
-#### `Middlewares` calls after reducer function and return 
+##### `Middlewares` calls after reducer function and return 
 ```swift
  AnyPublisher<MiddlewareAction, Never>
 ```

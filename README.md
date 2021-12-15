@@ -68,7 +68,7 @@ class AppModuleAssembly {
 
 ```
 
-##### That was very simple example, in real life you have to use network request, action in app state changes and many other features. In these cases you can use `Middleware`.
+That was very simple example, in real life you have to use network request, action in app state changes and many other features. In these cases you can use `Middleware`.
 
 ##### `Middlewares` calls after reducer function and return 
 ```swift
@@ -77,7 +77,7 @@ class AppModuleAssembly {
 
 ##### For example create simple project who fetch users from `https://jsonplaceholder.typicode.com/users`.
 
-##### Create DTO (Decode to object) model
+Create DTO (Decode to object) model
 ```swift
 struct UserDTO: Decodable, Equatable, Identifiable {
     let id: Int
@@ -86,7 +86,7 @@ struct UserDTO: Decodable, Equatable, Identifiable {
     let phone: String
 }
 ```
-##### `Equatable` protocol for our state, `Identifiable` for `ForEach` generate view in SwiftUI View.
+`Equatable` protocol for our state, `Identifiable` for `ForEach` generate view in SwiftUI View.
 
 ##### Simple network request without error checking
 ```swift
@@ -211,15 +211,15 @@ class AppMiddleware: Middleware {
 }
 ```
 
-##### When reducer ended his job with action, our store check all added middlewares for some `Publishers` for curent `Action`, if Publisher not nil, `Store` runing that Publisher.
+When reducer ended his job with action, our store check all added middlewares for some `Publishers` for curent `Action`, if Publisher not nil, `Store` runing that Publisher.
 
-##### You can return action for reducer and change some data, return action for routing, return `.multiple` actions.
+You can return action for reducer and change some data, return action for routing, return `.multiple` actions.
 
 ```swift
 case multiple([MiddlewareAction<A, R>])
 ```
 
-##### You can return `Deferred Action`.
+#### You can return `Deferred Action`.
 
 ```swift
 public protocol DeferredAction {
@@ -230,4 +230,4 @@ public protocol DeferredAction {
 }
 ```
 
-##### If you want route to Authorization, when your Session Provider send event about dead you session, you can use it `action`. All you need that conform to protocol `DeferredAction` you `class/struct` and erase it to `AnyDeferredAction` with generic `Action`.
+If you want route to Authorization, when your Session Provider send event about dead you session, you can use it `action`. All you need that conform to protocol `DeferredAction` you `class/struct` and erase it to `AnyDeferredAction` with generic `Action`.

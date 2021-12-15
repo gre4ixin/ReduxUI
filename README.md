@@ -87,3 +87,147 @@ struct UserDTO: Decodable, Equatable, Identifiable {
 }
 ```
 ##### `Equatable` protocol for our state, `Identifiable` for `ForEach` generate view in SwiftUI View.
+
+##### Simple network request without error checking
+```swift
+import Foundation
+import Combine
+
+protocol NetworkWrapperInterface {
+    func request<D: Decodable>(path: URL, decode: D.Type) -> AnyPublisher<D, NetworkError>
+}
+
+struct NetworkError: Error {
+    let response: URLResponse?
+    let error: Error?
+}
+
+class NetworkWrapper: NetworkWrapperInterface {
+    
+    func request<D: Decodable>(path: URL, decode: D.Type) -> AnyPublisher<D, NetworkError> {
+        return Deferred {
+            Future<D, NetworkError> { promise in
+                let request = URLRequest(url: path)
+                URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+                    guard let _ = self else { return }
+                    if let _error = error {
+                        promise(.failure(NetworkError(response: response, error: _error)))
+                    }
+                    
+                    guard let unwrapData = data, let json = try? JSONDecoder().decode(decode, from: unwrapData) else {
+                        promise(.failure(NetworkError(response: response, error: error)))
+                        return
+                    }
+                    
+                    promise(.success(json))
+                    
+                }.resume()
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+}
+```
+
+##### Make `State`, `Action` and `Reducer`
+
+```swift
+enum AppAction: AnyAction {
+    case fetch
+    case isLoading
+    case loadingEnded
+    case updateUsers([UserDTO])
+    case error(message: String)
+}
+
+struct AppState: AnyState {
+    var users: [UserDTO] = []
+    var isLoading = false
+    var errorMessage = ""
+}
+
+class AppReducer: Reducer {
+    typealias A = AppAction
+    
+    func reduce(_ state: inout AppState, action: AppAction, performRoute: @escaping ((RouteWrapperAction) -> Void)) {
+        switch action {
+        case .fetch:
+            state.isLoading = true
+            state.errorMessage = ""
+        case .isLoading:
+            state.isLoading = true
+        case .loadingEnded:
+            state.isLoading = false
+        case .updateUsers(let users):
+            state.users = users
+            state.isLoading = false
+            state.errorMessage = ""
+        case .error(let message):
+            state.errorMessage = message
+        }
+    }
+}
+```
+
+##### Middleware for make network request and return `users DTO`.
+
+```swift
+class AppMiddleware: Middleware {
+    typealias S = AppState
+    typealias A = AppAction
+    typealias R = RouteWrapperAction
+    
+    let networkWrapper: NetworkWrapperInterface
+    
+    var cancelabels = CombineBag()
+    
+    init(networkWrapper: NetworkWrapperInterface) {
+        self.networkWrapper = networkWrapper
+    }
+    
+    func execute(_ state: AppState, action: AppAction) -> AnyPublisher<MiddlewareAction<AppAction, RouteWrapperAction>, Never>? {
+        switch action {
+        case .fetch:
+            return Deferred {
+                Future<MiddlewareAction<AppAction, RouteWrapperAction>, Never> { [weak self] promise in
+                    guard let self = self else { return }
+                    self.networkWrapper
+                        .request(path: URL(string: "https://jsonplaceholder.typicode.com/users")!, decode: [UserDTO].self)
+                        .sink { result in
+                            switch result {
+                            case .finished: break
+                            case .failure(let error):
+                                promise(.success(.performAction(.error(message: "Something went wrong!"))))
+                            }
+                        } receiveValue: { dto in
+                            promise(.success(.performAction(.updateUsers(dto))))
+                        }.store(in: &self.cancelabels)
+                }
+            }.eraseToAnyPublisher()
+        default:
+            return nil
+        }
+    }
+}
+```
+
+##### When reducer ended his job with action, our store check all added middlewares for some `Publishers` for curent `Action`, if Publisher not nil, `Store` runing that Publisher.
+
+##### You can return action for reducer and change some data, return action for routing, return `.multiple` actions.
+
+```swift
+case multiple([MiddlewareAction<A, R>])
+```
+
+##### You can return `Deferred Action`.
+
+```swift
+public protocol DeferredAction {
+    associatedtype A: AnyAction
+    func observe() -> AnyPublisher<A, Never>?
+    
+    func eraseToAnyDeferredAction() -> AnyDeferredAction<A>
+}
+```
+
+##### If you want route to Authorization, when your Session Provider send event about dead you session, you can use it `action`. All you need that conform to protocol `DeferredAction` you `class/struct` and erase it to `AnyDeferredAction` with generic `Action`.

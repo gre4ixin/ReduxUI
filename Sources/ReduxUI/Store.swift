@@ -11,36 +11,36 @@ import Foundation
 
 public typealias CombineBag = Set<AnyCancellable>
 
-protocol ReducerInterface {
-    associatedtype S: AnyState
-    associatedtype A: AnyAction
-    associatedtype R: RouteType
-    
-    func reduce(_ state: inout S, action: A, performRoute: @escaping ((_ route: R) -> Void))
-}
-
-
-public final class Store<S: AnyState, A: AnyAction, R: RouteType>: ObservableObject {
+public class Store<S: AnyState, A: AnyAction, R: Route>: ObservableObject {
     
     @Published public private(set) var state: S
     
-    public typealias Reducer = (_ state: inout S, _ action: A, _ performRoute: @escaping PerformRoute) -> Void
+    public var outputReducer: AnyReducerWrapper<A> {
+        return reducer.wrapReducer()
+    }
+    
+    public typealias StoreReducer = AnyReducer<S, A, R>
     public typealias PerformRoute = (_ route: R) -> Void
     
-    private let reduce: Reducer
+    private let reducer: AnyReducer<S, A, R>
     private var performRoute: PerformRoute!
     private(set) var middlewares: [AnyMiddleware<S, A, R>] = []
     private var middlewareCancellables = CombineBag()
-    private var coordinator: AnyCoordinator<R>
-    private let queue = DispatchQueue(label: "redux.serial.queue")
+    private var coordinator: StrongRouter<R>
+    private let queue =  DispatchQueue(label: "redux.serial.queue")
     
-    public init(initialState: S, coordinator: AnyCoordinator<R>, reducer: @escaping Reducer) {
+    public init(initialState: S, coordinator: StrongRouter<R>, reducer: StoreReducer) {
         self.state = initialState
-        self.reduce = reducer
         self.coordinator = coordinator
+        self.reducer = reducer
         self.performRoute = { [weak self] route in
             guard let self = self else { return }
             self.route(route)
+        }
+        
+        reducer.handlingOutputAction { [weak self] outputAction in
+            guard let self = self else { return }
+            self.dispatch(outputAction)
         }
     }
     
@@ -49,7 +49,7 @@ public final class Store<S: AnyState, A: AnyAction, R: RouteType>: ObservableObj
     }
     
     public func dispatch(_ action: A) {
-        reduce(&state, action, performRoute)
+        reducer.reduce(&state, action: action, performRoute: performRoute)
         
         for mw in middlewares {
             guard let future = mw.execute(state, action: action) else { return }
@@ -87,7 +87,7 @@ public final class Store<S: AnyState, A: AnyAction, R: RouteType>: ObservableObj
     }
     
     public func route(_ transition: R) {
-        coordinator.perform(transition)
+        coordinator.trigger(transition)
     }
     
     private func runDeferredAction(_ action: AnyDeferredAction<A>) {

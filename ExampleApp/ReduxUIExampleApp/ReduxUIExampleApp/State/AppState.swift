@@ -20,11 +20,13 @@ enum AppAction: AnyAction {
     case isLoading
     case loadingEnded
     case updateUsers([UserDTO])
+    case error(message: String)
 }
 
 struct AppState: AnyState {
     var users: [UserDTO] = []
     var isLoading = false
+    var errorMessage = ""
 }
 
 class AppReducer: Reducer {
@@ -34,6 +36,7 @@ class AppReducer: Reducer {
         switch action {
         case .fetch:
             state.isLoading = true
+            state.errorMessage = ""
         case .isLoading:
             state.isLoading = true
         case .loadingEnded:
@@ -41,6 +44,9 @@ class AppReducer: Reducer {
         case .updateUsers(let users):
             state.users = users
             state.isLoading = false
+            state.errorMessage = ""
+        case .error(let message):
+            state.errorMessage = message
         }
     }
 }
@@ -70,7 +76,7 @@ class AppMiddleware: Middleware {
                             switch result {
                             case .finished: break
                             case .failure(let error):
-                                break
+                                promise(.success(.performAction(.error(message: "Something went wrong!"))))
                             }
                         } receiveValue: { dto in
                             promise(.success(.performAction(.updateUsers(dto))))

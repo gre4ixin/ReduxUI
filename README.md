@@ -74,3 +74,16 @@ class AppModuleAssembly {
 ```swift
  AnyPublisher<MiddlewareAction, Never>
 ```
+
+##### For example create simple project who fetch users from `https://jsonplaceholder.typicode.com/users`.
+
+##### Create DTO (Decode to object) model
+```swift
+struct UserDTO: Decodable, Equatable, Identifiable {
+    let id: Int
+    let name: String
+    let username: String
+    let phone: String
+}
+```
+##### `Equatable` protocol for our state, `Identifiable` for `ForEach` generate view in SwiftUI View.

@@ -32,6 +32,11 @@ struct ContentView: View {
             if store.state.isLoading {
                 Text("Loading")
             }
+            
+            if !store.state.errorMessage.isEmpty {
+                Text(LocalizedStringKey(store.state.errorMessage))
+            }
+            
             Button {
                 store.dispatch(.fetch)
             } label: {

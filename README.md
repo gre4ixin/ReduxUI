@@ -1,5 +1,3 @@
-# ReduxUI
-
 # Simple Architecture like Redux
 
 ## Very simple example of usage ReduxUI

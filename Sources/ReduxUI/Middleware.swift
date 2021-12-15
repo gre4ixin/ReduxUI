@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 
-public enum MiddlewareAction<A: AnyAction, R: RouteType> {
+public enum MiddlewareAction<A: AnyAction, R: AnyRoute> {
     case performAction(A)
     case performRoute(R)
     case performDeferredAction(AnyDeferredAction<A>)
@@ -20,7 +20,7 @@ public enum MiddlewareAction<A: AnyAction, R: RouteType> {
 public protocol Middleware {
     associatedtype S: AnyState
     associatedtype A: AnyAction
-    associatedtype R: RouteType
+    associatedtype R: AnyRoute
     
     func execute(_ state: S, action: A) -> AnyPublisher<MiddlewareAction<A, R>, Never>?
     
@@ -33,7 +33,7 @@ public extension Middleware {
     }
 }
 
-public class AnyMiddleware<State: AnyState, Action: AnyAction, Route: RouteType>: Middleware {
+public class AnyMiddleware<State: AnyState, Action: AnyAction, Route: AnyRoute>: Middleware {
     public typealias S = State
     public typealias A = Action
     public typealias R = Route

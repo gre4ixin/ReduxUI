@@ -11,7 +11,7 @@ import Foundation
 
 public typealias CombineBag = Set<AnyCancellable>
 
-public class Store<S: AnyState, A: AnyAction, R: Route>: ObservableObject {
+public class Store<S: AnyState, A: AnyAction, R: AnyRoute>: ObservableObject {
     
     @Published public private(set) var state: S
     
@@ -26,10 +26,10 @@ public class Store<S: AnyState, A: AnyAction, R: Route>: ObservableObject {
     private var performRoute: PerformRoute!
     private(set) var middlewares: [AnyMiddleware<S, A, R>] = []
     private var middlewareCancellables = CombineBag()
-    private var coordinator: StrongRouter<R>
+    private var coordinator: AnyCoordinator<R>
     private let queue =  DispatchQueue(label: "redux.serial.queue")
     
-    public init(initialState: S, coordinator: StrongRouter<R>, reducer: StoreReducer) {
+    public init(initialState: S, coordinator: AnyCoordinator<R>, reducer: StoreReducer) {
         self.state = initialState
         self.coordinator = coordinator
         self.reducer = reducer
@@ -87,7 +87,7 @@ public class Store<S: AnyState, A: AnyAction, R: Route>: ObservableObject {
     }
     
     public func route(_ transition: R) {
-        coordinator.trigger(transition)
+        coordinator.perform(transition)
     }
     
     private func runDeferredAction(_ action: AnyDeferredAction<A>) {

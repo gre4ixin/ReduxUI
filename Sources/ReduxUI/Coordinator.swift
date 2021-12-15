@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol Coordinator {
-    associatedtype R: RouteType
+    associatedtype R: AnyRoute
     
     func perform(_ route: R)
     func eraseToAnyCoordinator() -> AnyCoordinator<R>
@@ -20,7 +20,7 @@ public extension Coordinator {
     }
 }
 
-public class AnyCoordinator<_R: RouteType>: Coordinator {
+public class AnyCoordinator<_R: AnyRoute>: Coordinator {
     public typealias R = _R
     
     private var _perform: (R) -> Void

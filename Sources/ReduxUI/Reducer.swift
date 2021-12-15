@@ -19,7 +19,7 @@ public extension ReducerWrapper {
 
 public protocol Reducer: ReducerWrapper {
     associatedtype S: AnyState
-    associatedtype R: RouteType
+    associatedtype R: AnyRoute
     
     func reduce(_ state: inout S, action: A, performRoute: @escaping ((_ route: R) -> Void))
     
@@ -32,7 +32,7 @@ public extension Reducer {
     }
 }
 
-public class AnyReducer<_State: AnyState, _Action: AnyAction, _Route: RouteType>: Reducer {
+public class AnyReducer<_State: AnyState, _Action: AnyAction, _Route: AnyRoute>: Reducer {
     public typealias S = _State
     public typealias A = _Action
     public typealias R = _Route
@@ -62,7 +62,7 @@ public class AnyReducer<_State: AnyState, _Action: AnyAction, _Route: RouteType>
 }
 
 public class AnyReducerWrapper<_A: AnyAction>: ReducerWrapper {
-    typealias A = _A
+    public typealias A = _A
     
     private var _performOutput: (A) -> Void
     

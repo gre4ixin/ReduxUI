@@ -1,3 +1,11 @@
+<p align="center">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-iOS-orange.svg">
+  <img alt="Swift" src="https://img.shields.io/badge/Swift-5.5-orange.svg">
+  <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-blue.svg">
+  <img alt="Platform Version" src="https://img.shields.io/badge/iOS-13-green.svg">
+</p>
+
+
 # Simple Architecture like Redux
 
 ##### Very simple example of usage ReduxUI

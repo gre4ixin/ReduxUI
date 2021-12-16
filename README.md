@@ -8,7 +8,15 @@
 
 # Simple Architecture like Redux
 
-##### Very simple example of usage ReduxUI
+## Installation
+### SPM
+```swift
+dependencies: [
+    .package(url: "https://github.com/gre4ixin/ReduxUI.git", .upToNextMinor(from: "0.0.11"))
+]
+```
+
+## Usage 
 ```swift
 import ReduxUI
 

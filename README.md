@@ -22,7 +22,7 @@ struct AppState: AnyState {
 }
 
 class AppReducer: Reducer {
-    typealias A = AppAction
+    typealias Action = AppAction
 
     func reduce(_ state: inout AppState, action: AppAction, performRoute: @escaping ((_ route: SomeRoute) -> Void)) {
         switch action {
@@ -147,7 +147,7 @@ struct AppState: AnyState {
 }
 
 class AppReducer: Reducer {
-    typealias A = AppAction
+    typealias Action = AppAction
     
     func reduce(_ state: inout AppState, action: AppAction, performRoute: @escaping ((RouteWrapperAction) -> Void)) {
         switch action {
@@ -173,9 +173,9 @@ class AppReducer: Reducer {
 
 ```swift
 class AppMiddleware: Middleware {
-    typealias S = AppState
-    typealias A = AppAction
-    typealias R = RouteWrapperAction
+    typealias State = AppState
+    typealias Action = AppAction
+    typealias Router = RouteWrapperAction
     
     let networkWrapper: NetworkWrapperInterface
     
@@ -223,8 +223,8 @@ case multiple([MiddlewareAction<A, R>])
 
 ```swift
 public protocol DeferredAction {
-    associatedtype A: AnyAction
-    func observe() -> AnyPublisher<A, Never>?
+    associatedtype Action: AnyAction
+    func observe() -> AnyPublisher<Action, Never>?
     
     func eraseToAnyDeferredAction() -> AnyDeferredAction<A>
 }

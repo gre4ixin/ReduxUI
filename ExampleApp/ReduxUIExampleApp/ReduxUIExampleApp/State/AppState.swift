@@ -30,7 +30,7 @@ struct AppState: AnyState {
 }
 
 class AppReducer: Reducer {
-    typealias A = AppAction
+    typealias Action = AppAction
     
     func reduce(_ state: inout AppState, action: AppAction, performRoute: @escaping ((RouteWrapperAction) -> Void)) {
         switch action {

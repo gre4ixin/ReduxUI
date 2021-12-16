@@ -8,24 +8,24 @@
 import Foundation
 
 public protocol Coordinator {
-    associatedtype R: AnyRoute
+    associatedtype Router: AnyRoute
     
-    func perform(_ route: R)
-    func eraseToAnyCoordinator() -> AnyCoordinator<R>
+    func perform(_ route: Router)
+    func eraseToAnyCoordinator() -> AnyCoordinator<Router>
 }
 
 public extension Coordinator {
-    func eraseToAnyCoordinator() -> AnyCoordinator<R> {
+    func eraseToAnyCoordinator() -> AnyCoordinator<Router> {
         return AnyCoordinator(base: self)
     }
 }
 
 public class AnyCoordinator<_R: AnyRoute>: Coordinator {
-    public typealias R = _R
+    public typealias Router = _R
     
-    private var _perform: (R) -> Void
+    private var _perform: (Router) -> Void
     
-    public init<U: Coordinator>(base: U) where U.R == _R {
+    public init<U: Coordinator>(base: U) where U.Router == _R {
         _perform = base.perform(_:)
     }
     

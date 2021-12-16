@@ -8,39 +8,39 @@
 import Foundation
 
 public protocol ReducerWrapper {
-    associatedtype A: AnyAction
+    associatedtype Action: AnyAction
     
-    func performOutput(_ action: A)
+    func performOutput(_ action: Action)
 }
 
 public extension ReducerWrapper {
-    func performOutput(_ action: A) { }
+    func performOutput(_ action: Action) { }
 }
 
 public protocol Reducer: ReducerWrapper {
-    associatedtype S: AnyState
-    associatedtype R: AnyRoute
+    associatedtype State: AnyState
+    associatedtype Router: AnyRoute
     
-    func reduce(_ state: inout S, action: A, performRoute: @escaping ((_ route: R) -> Void))
+    func reduce(_ state: inout State, action: Action, performRoute: @escaping ((_ route: Router) -> Void))
     
-    func eraseToAnyReducer() -> AnyReducer<S, A, R>
+    func eraseToAnyReducer() -> AnyReducer<State, Action, Router>
 }
 
 public extension Reducer {
-    func eraseToAnyReducer() -> AnyReducer<S, A, R> {
+    func eraseToAnyReducer() -> AnyReducer<State, Action, Router> {
         return AnyReducer(base: self)
     }
 }
 
 public class AnyReducer<_State: AnyState, _Action: AnyAction, _Route: AnyRoute>: Reducer {
-    public typealias S = _State
-    public typealias A = _Action
-    public typealias R = _Route
+    public typealias State = _State
+    public typealias Action = _Action
+    public typealias Router = _Route
     
-    private var _outputHandler: ((A) -> Void)?
-    private var _performReducer: (_ state: inout S, _ action: A, _ performRoute: @escaping (_ route: R) -> Void) -> Void
+    private var _outputHandler: ((Action) -> Void)?
+    private var _performReducer: (_ state: inout State, _ action: Action, _ performRoute: @escaping (_ route: Router) -> Void) -> Void
     
-    public init<U: Reducer>(base: U) where U.S == _State, U.A == _Action, U.R == _Route {
+    public init<U: Reducer>(base: U) where U.State == _State, U.Action == _Action, U.Router == _Route {
         _performReducer = base.reduce(_:action:performRoute:)
     }
     
@@ -52,21 +52,21 @@ public class AnyReducer<_State: AnyState, _Action: AnyAction, _Route: AnyRoute>:
         _outputHandler?(action)
     }
     
-    public func handlingOutputAction(_ handler: @escaping ((A) -> Void)) {
+    public func handlingOutputAction(_ handler: @escaping ((Action) -> Void)) {
         self._outputHandler = handler
     }
     
-    public func wrapReducer() -> AnyReducerWrapper<A> {
+    public func wrapReducer() -> AnyReducerWrapper<Action> {
         return AnyReducerWrapper(base: self)
     }
 }
 
 public class AnyReducerWrapper<_A: AnyAction>: ReducerWrapper {
-    public typealias A = _A
+    public typealias Action = _A
     
-    private var _performOutput: (A) -> Void
+    private var _performOutput: (Action) -> Void
     
-    public init<U: ReducerWrapper>(base: U) where U.A == _A {
+    public init<U: ReducerWrapper>(base: U) where U.Action == _A {
         _performOutput = base.performOutput(_:)
     }
     

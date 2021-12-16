@@ -11,24 +11,24 @@ import Combine
 public protocol AnyAction { }
 
 public protocol DeferredAction {
-    associatedtype A: AnyAction
-    func observe() -> AnyPublisher<A, Never>?
+    associatedtype Action: AnyAction
+    func observe() -> AnyPublisher<Action, Never>?
     
-    func eraseToAnyDeferredAction() -> AnyDeferredAction<A>
+    func eraseToAnyDeferredAction() -> AnyDeferredAction<Action>
 }
 
 public extension DeferredAction {
-    func eraseToAnyDeferredAction() -> AnyDeferredAction<A> {
-        return AnyDeferredAction<A>(base: self)
+    func eraseToAnyDeferredAction() -> AnyDeferredAction<Action> {
+        return AnyDeferredAction<Action>(base: self)
     }
 }
 
 public class AnyDeferredAction<ActionType: AnyAction>: DeferredAction {
-    public typealias A = ActionType
+    public typealias Action = ActionType
     
     private let _observe: () -> AnyPublisher<ActionType, Never>?
     
-    public init<U: DeferredAction>(base: U) where U.A == ActionType {
+    public init<U: DeferredAction>(base: U) where U.Action == ActionType {
         _observe = base.observe
     }
     

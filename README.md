@@ -227,6 +227,11 @@ class AppMiddleware: Middleware {
 }
 ```
 
+`Content View`
+```swift
+
+```
+
 When reducer ended his job with action, our store check all added middlewares for some `Publishers` for curent `Action`, if Publisher not nil, `Store` runing that Publisher.
 
 You can return action for reducer and change some data, return action for routing, return `.multiple` actions.

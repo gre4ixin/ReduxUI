@@ -88,9 +88,3 @@ class AppMiddleware: Middleware {
         }
     }
 }
-
-class AnyStore<SomeState: AnyState, SomeAction: AnyAction, SomeCoordinator: Coordinator> {
-    static func build() {
-        let s: Store<SomeState, SomeAction, SomeCoordinator.Router>
-    }
-}

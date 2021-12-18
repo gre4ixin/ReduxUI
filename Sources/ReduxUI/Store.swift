@@ -13,6 +13,9 @@ public typealias CombineBag = Set<AnyCancellable>
 
 public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: ObservableObject {
     
+    ///  Change State from
+    ///
+    ///     public func dispatch(_ action: Action)
     @Published public private(set) var state: State
     
     public var outputReducer: AnyReducerWrapper<Action> {
@@ -29,6 +32,11 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
     private var coordinator: AnyCoordinator<Router>
     private let queue =  DispatchQueue(label: "redux.serial.queue")
     
+    /// Init store with initial state value if you have to use DI
+    /// - Parameters:
+    ///   - initialState: your State
+    ///   - coordinator:
+    ///   - reducer: AnyReducer
     public init(initialState: State, coordinator: AnyCoordinator<Router>, reducer: StoreReducer) {
         self.state = initialState
         self.coordinator = coordinator
@@ -48,9 +56,12 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
         middlewares.append(middleware)
     }
     
+    /// Calling dispatch with action for processing State
+    /// - Parameter action: AnyAction
     public func dispatch(_ action: Action) {
         reducer.reduce(&state, action: action, performRoute: performRoute)
         
+        /// Check if any middlewares can perform current action
         for mw in middlewares {
             guard let future = mw.execute(state, action: action) else { return }
             
@@ -86,10 +97,14 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
         }
     }
     
+    /// Wrapper for your navigation concepts you can perform route action in simple Coordinator class
+    /// - Parameter transition: AnyRoute
     public func route(_ transition: Router) {
         coordinator.perform(transition)
     }
     
+    /// Deferred action runner
+    /// - Parameter action: Erase deferred action and execute them
     private func runDeferredAction(_ action: AnyDeferredAction<Action>) {
         guard let _action = action.observe() else { return }
         _action

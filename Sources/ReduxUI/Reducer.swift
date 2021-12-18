@@ -7,6 +7,8 @@
 
 import Foundation
 
+//TODO: - Make output dispatch
+/// Reducer wrapper protocol for out put dispatch action
 public protocol ReducerWrapper {
     associatedtype Action: AnyAction
     
@@ -17,6 +19,7 @@ public extension ReducerWrapper {
     func performOutput(_ action: Action) { }
 }
 
+/// Reducer protocol place for change State
 public protocol Reducer: ReducerWrapper {
     associatedtype State: AnyState
     associatedtype Router: AnyRoute
@@ -26,12 +29,14 @@ public protocol Reducer: ReducerWrapper {
     func eraseToAnyReducer() -> AnyReducer<State, Action, Router>
 }
 
+/// Default erase type reducer Erasure Type patter for protocol with generic
 public extension Reducer {
     func eraseToAnyReducer() -> AnyReducer<State, Action, Router> {
         return AnyReducer(base: self)
     }
 }
 
+/// Erase Reducer
 public class AnyReducer<_State: AnyState, _Action: AnyAction, _Route: AnyRoute>: Reducer {
     public typealias State = _State
     public typealias Action = _Action

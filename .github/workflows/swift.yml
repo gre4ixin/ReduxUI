@@ -1,0 +1,15 @@
+name: Swift
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build ( iOS 15.0)
+      run: xcodebuild -scheme ReduxUI -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 12 Pro'

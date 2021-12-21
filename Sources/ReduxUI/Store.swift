@@ -31,6 +31,7 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
     private var middlewareCancellables = CombineBag()
     private var coordinator: AnyCoordinator<Router>
     private let queue =  DispatchQueue(label: "redux.serial.queue")
+    private var lock = os_unfair_lock_s()
     
     /// Init store with initial state value if you have to use DI
     /// - Parameters:
@@ -59,7 +60,10 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
     /// Calling dispatch with action for processing State
     /// - Parameter action: AnyAction
     public func dispatch(_ action: Action) {
+        os_unfair_lock_lock(&lock)
         reducer.reduce(&state, action: action, performRoute: performRoute)
+        os_unfair_lock_unlock(&lock)
+        
         
         /// Check if any middlewares can perform current action
         for mw in middlewares {

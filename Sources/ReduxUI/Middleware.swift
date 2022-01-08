@@ -56,3 +56,40 @@ public class AnyMiddleware<State: AnyState, Action: AnyAction, Route: AnyRoute>:
     }
     
 }
+
+#if swift(>=5.5)
+
+public protocol AsyncMiddleware {
+    associatedtype State: AnyState
+    associatedtype Action: AnyAction
+    associatedtype Router: AnyRoute
+    
+    func execute(_ state: State, action: Action) async -> MiddlewareAction<Action, Router>?
+    
+    func eraseToAnyMiddleware() -> AnyAsyncMiddleware<State, Action, Router>
+}
+
+public extension AsyncMiddleware {
+    func eraseToAnyMiddleware() -> AnyAsyncMiddleware<State, Action, Router> {
+        return AnyAsyncMiddleware(base: self)
+    }
+}
+
+public class AnyAsyncMiddleware<State: AnyState, Action: AnyAction, RouteType: AnyRoute>: AsyncMiddleware {
+    public typealias State = State
+    public typealias Action = Action
+    public typealias Router = RouteType
+    
+    private var privateExecute: (State, Action) async -> MiddlewareAction<Action, Router>?
+    
+    public init<U: AsyncMiddleware>(base: U) where U.Action == Action, U.State == State, U.Router == RouteType {
+        privateExecute = base.execute(_:action:)
+    }
+    
+    public func execute(_ state: State, action: Action) async -> MiddlewareAction<Action, RouteType>? {
+        return await privateExecute(state, action)
+    }
+    
+}
+
+#endif

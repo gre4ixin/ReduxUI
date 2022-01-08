@@ -28,6 +28,7 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
     private let reducer: AnyReducer<State, Action, Router>
     private var performRoute: PerformRoute!
     private(set) var middlewares: [AnyMiddleware<State, Action, Router>] = []
+    private(set) var asyncMiddlewares: [AnyAsyncMiddleware<State, Action, Router>] = []
     private var middlewareCancellables = CombineBag()
     private var coordinator: AnyCoordinator<Router>
     private let queue =  DispatchQueue(label: "redux.serial.queue")
@@ -57,6 +58,14 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
         middlewares.append(middleware)
     }
     
+    #if swift(>=5.5)
+    
+    public func add(_ asyncMiddleware: AnyAsyncMiddleware<State, Action, Router>) {
+        asyncMiddlewares.append(asyncMiddleware)
+    }
+    
+    #endif
+    
     /// Calling dispatch with action for processing State
     /// - Parameter action: AnyAction
     public func dispatch(_ action: Action) {
@@ -64,10 +73,34 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
         reducer.reduce(&state, action: action, performRoute: performRoute)
         os_unfair_lock_unlock(&lock)
         
-        
         /// Check if any middlewares can perform current action
-        for mw in middlewares {
-            guard let future = mw.execute(state, action: action) else { return }
+        performAnyMiddlewares(for: action)
+        #if swift(>=5.5)
+        performAsyncMiddlewares(for: action)
+        #endif
+    }
+    
+    /// Wrapper for your navigation concepts you can perform route action in simple Coordinator class
+    /// - Parameter transition: AnyRoute
+    public func route(_ transition: Router) {
+        coordinator.perform(transition)
+    }
+    
+    /// Deferred action runner
+    /// - Parameter action: Erase deferred action and execute them
+    private func runDeferredAction(_ action: AnyDeferredAction<Action>) {
+        guard let _action = action.observe() else { return }
+        _action
+            .sink { [weak self] action in
+                guard let self = self else { return }
+                self.dispatch(action)
+            }.store(in: &middlewareCancellables)
+    }
+    
+    private func performAnyMiddlewares(for action: Action) {
+        /// Check if any middlewares can perform current action
+        for middleware in middlewares {
+            guard let future = middleware.execute(state, action: action) else { return }
             
             future
                 .subscribe(on: queue)
@@ -101,21 +134,42 @@ public class Store<State: AnyState, Action: AnyAction, Router: AnyRoute>: Observ
         }
     }
     
-    /// Wrapper for your navigation concepts you can perform route action in simple Coordinator class
-    /// - Parameter transition: AnyRoute
-    public func route(_ transition: Router) {
-        coordinator.perform(transition)
-    }
-    
-    /// Deferred action runner
-    /// - Parameter action: Erase deferred action and execute them
-    private func runDeferredAction(_ action: AnyDeferredAction<Action>) {
-        guard let _action = action.observe() else { return }
-        _action
-            .sink { [weak self] action in
-                guard let self = self else { return }
-                self.dispatch(action)
-            }.store(in: &middlewareCancellables)
+    private func performAsyncMiddlewares(for action: Action) {
+        for asyncMiddleware in asyncMiddlewares {
+            Task {
+                guard let middlewareAction = await asyncMiddleware.execute(state, action: action) else { return }
+                switch middlewareAction {
+                case .none: break
+                case .performAction(let action):
+                    await MainActor.run {
+                        self.dispatch(action)
+                    }
+                case .performRoute(let route):
+                    await MainActor.run(body: {
+                        self.route(route)
+                    })
+                case .performDeferredAction(let anyDeferredAction):
+                    await MainActor.run(body: {
+                        self.runDeferredAction(anyDeferredAction)
+                    })
+                case .multiple(let actionArray):
+                    await MainActor.run(body: {
+                        actionArray.forEach({
+                            switch $0 {
+                            case .performDeferredAction(let anyDeferredAction):
+                                self.runDeferredAction(anyDeferredAction)
+                            case .performAction(let action):
+                                self.dispatch(action)
+                            case .performRoute(let route):
+                                self.route(route)
+                            default:
+                                break
+                            }
+                        })
+                    })
+                }
+            }
+        }
     }
     
 }

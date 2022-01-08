@@ -14,7 +14,7 @@
 ### SPM
 ```swift
 dependencies: [
-    .package(url: "https://github.com/gre4ixin/ReduxUI.git", .upToNextMinor(from: "0.0.11"))
+    .package(url: "https://github.com/gre4ixin/ReduxUI.git", .upToNextMinor(from: "1.0.0"))
 ]
 ```
 

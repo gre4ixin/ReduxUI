@@ -25,5 +25,6 @@ let package = Package(
         .testTarget(
             name: "ReduxUITests",
             dependencies: ["ReduxUI"]),
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )

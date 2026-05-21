@@ -1,10 +1,10 @@
 ![logo](./logo.png)
 
 <p align="center">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-iOS-orange.svg">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS-orange.svg">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5.5-orange.svg">
   <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-blue.svg">
-  <img alt="Platform Version" src="https://img.shields.io/badge/iOS-13-green.svg">
+  <img alt="Platform Version" src="https://img.shields.io/badge/iOS-13%2B%20%7C%20macOS%2010.15%2B%20%7C%20tvOS%2013%2B%20%7C%20watchOS%206%2B-green.svg">
 </p>
 
 
@@ -26,7 +26,7 @@ class SomeCoordinator: Coordinator {
     func perform(_ route: SomeRoute) { }
 }
 
-enum SomeRoute: RouteType {
+enum SomeRoute: AnyRoute {
 
 }
 
@@ -52,12 +52,12 @@ class AppReducer: Reducer {
     }
 }
 
-class ContentView: View {
-    @EnvironmentObject var store: Store<AppState, AppAction, SomeRouter>
+struct ContentView: View {
+    @EnvironmentObject var store: Store<AppState, AppAction, SomeRoute>
 
     var body: some View {
-        VSTack {
-            Text(store.state.counter)
+        VStack {
+            Text("\(store.state.counter)")
 
             Button {
                 store.dispatch(.increase)
@@ -282,8 +282,47 @@ public protocol DeferredAction {
     associatedtype Action: AnyAction
     func observe() -> AnyPublisher<Action, Never>?
     
-    func eraseToAnyDeferredAction() -> AnyDeferredAction<A>
+    func eraseToAnyDeferredAction() -> AnyDeferredAction<Action>
 }
 ```
 
 If you want route to Authorization, when your Session Provider send event about dead you session, you can use it `action`. All you need that conform to protocol `DeferredAction` you `class/struct` and erase it to `AnyDeferredAction` with generic `Action`.
+
+#### Async/await Middleware
+
+Besides the Combine-based `Middleware`, you can use `AsyncMiddleware` to process actions with `async/await`:
+
+```swift
+class AppAsyncMiddleware: AsyncMiddleware {
+    typealias State = AppState
+    typealias Action = AppAction
+    typealias Router = RouteWrapperAction
+
+    let api: UsersAPI
+
+    init(api: UsersAPI) {
+        self.api = api
+    }
+
+    func execute(_ state: AppState, action: AppAction) async -> MiddlewareAction<AppAction, RouteWrapperAction>? {
+        switch action {
+        case .fetch:
+            do {
+                let users = try await api.users()
+                return .performAction(.updateUsers(users))
+            } catch {
+                return .performAction(.error(message: "Something went wrong!"))
+            }
+        default:
+            return nil
+        }
+    }
+}
+
+// register it on the store
+store.add(AppAsyncMiddleware(api: api).eraseToAnyMiddleware())
+```
+
+#### Thread-safety
+
+`dispatch(_:)` is safe to call from any thread. The reducer runs and `state` is mutated on the main thread, so SwiftUI updates always happen on the main run loop. Middleware results (Combine and `async`) are also delivered on the main thread.

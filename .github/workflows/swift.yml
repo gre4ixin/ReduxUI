@@ -4,12 +4,15 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Build ( iOS 15.0)
-      run: xcodebuild -scheme ReduxUI -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 12 Pro'
+    - uses: actions/checkout@v4
+    - name: Swift version
+      run: swift --version
+    - name: Build
+      run: swift build -v
+    - name: Run tests
+      run: swift test -v

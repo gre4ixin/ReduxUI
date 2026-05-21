@@ -23,12 +23,12 @@ class NetworkWrapper: NetworkWrapperInterface {
         return Deferred {
             Future<D, NetworkError> { promise in
                 let request = URLRequest(url: path)
-                URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-                    guard let _ = self else { return }
+                URLSession.shared.dataTask(with: request) { data, response, error in
                     if let _error = error {
                         promise(.failure(NetworkError(response: response, error: _error)))
+                        return
                     }
-                    
+
                     guard let unwrapData = data, let json = try? JSONDecoder().decode(decode, from: unwrapData) else {
                         promise(.failure(NetworkError(response: response, error: error)))
                         return

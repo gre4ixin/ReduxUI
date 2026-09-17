@@ -282,7 +282,7 @@ public protocol DeferredAction {
     associatedtype Action: AnyAction
     func observe() -> AnyPublisher<Action, Never>?
     
-    func eraseToAnyDeferredAction() -> AnyDeferredAction<A>
+    func eraseToAnyDeferredAction() -> AnyDeferredAction<Action>
 }
 ```
 
